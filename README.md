@@ -1,5 +1,7 @@
 # AI Lead Qualifier Agent 🤖
 
+![thumbnail](thumbnail.svg)
+
 AI-powered lead qualification system that automatically scores 
 incoming leads as HOT, WARM or COLD using Groq AI (Free).
 
