@@ -1,0 +1,293 @@
+{
+  "name": "AI Lead Qualifier Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "19HHlHnuvugG8wUahM14fnVgMKMFjl8NUxIpZOlDjo_o",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Form responses 1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "04bf6555-b00b-48f7-a794-908bd6680b4b",
+      "name": "Google Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        368
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "PFiIvo8CI2aH2e7d",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"temperature\": 0.3,\n  \"max_tokens\": 200,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a lead qualification expert. Reply only in valid JSON. No explanation, no markdown.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Score this lead as HOT, WARM or COLD.\\nName: {{ $('Google Sheets Trigger').item.json['Name'] }}\\nBusiness: {{ $('Google Sheets Trigger').item.json['Business Type'] }}\\nBudget: {{ $('Google Sheets Trigger').item.json['Monthly Budget'] }}\\nTimeline: {{ $('Google Sheets Trigger').item.json['Timeline'] }}\\nProblem: {{ $('Google Sheets Trigger').item.json['Problem'] }}\\n\\nReply ONLY: {\\\"score\\\": \\\"HOT or WARM or COLD\\\", \\\"reason\\\": \\\"one line\\\", \\\"recommended_action\\\": \\\"next step\\\"}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "39b8e5ad-9778-4c86-b153-43e87d01feec",
+      "name": "Groq - Score Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -416,
+        368
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cYjEGKXjuErrpKRx",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content;\nconst cleaned = raw.replace(/```json|```/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nconst prev = $('Google Sheets Trigger').first().json;\n\nreturn [{\n  json: {\n    name: prev['Name'] || '',\n    email: prev['Email'] || '',\n    business_type: prev['Business Type'] || '',\n    budget: prev['Monthly Budget'] || '',\n    timeline: prev['Timeline'] || '',\n    problem: prev['Problem'] || '',\n    score: parsed.score,\n    reason: parsed.reason,\n    recommended_action: parsed.recommended_action,\n    timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })\n  }\n}];"
+      },
+      "id": "41b53ae6-ec27-4768-9c17-c4e003f1e5eb",
+      "name": "Parse Groq Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zhaQv6JUiC7Of8hPY1mdbpyFfi7jnXpVmh7aoBF08Tk",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Lead Scores",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name ": "={{ $('Google Sheets Trigger').item.json['Name '] }}",
+            "Email": "={{ $('Google Sheets Trigger').item.json['  Email  '] }}",
+            "Budget": "={{ $('Google Sheets Trigger').item.json['Monthly Budget '] }}",
+            "Business Type": "={{ $('Google Sheets Trigger').item.json['Business Type '] }}",
+            "Timeline": "={{ $('Google Sheets Trigger').item.json['  Timeline  '] }}",
+            "Problem": "={{ $('Google Sheets Trigger').item.json['  Problem  '] }}",
+            "Score": "={{ $json.score }}",
+            "Reason": "={{ $json.reason }}",
+            "Recommended Action": "={{ $json.recommended_action }}",
+            "Timestamp": "={{ $json.timestamp }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name ",
+              "displayName": "Name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Business Type",
+              "displayName": "Business Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timeline",
+              "displayName": "Timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Problem",
+              "displayName": "Problem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommended Action",
+              "displayName": "Recommended Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1797cc31-7b8a-48cb-a4c1-82ab4f874e59",
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        64,
+        368
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CcvJk6nFo2qKxQmO",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Groq - Score Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq - Score Lead": {
+      "main": [
+        [
+          {
+            "node": "Parse Groq Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Groq Response": {
+      "main": [
+        [
+          {
+            "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "57e0fee3-5a0a-42bd-9eee-813ca71c4fb5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "88337ffcc05f57895dcffab818689c0fe7dac66da1c157804e40fba4fdbe4def"
+  },
+  "id": "FDPB5XwJSzxQvzTe",
+  "tags": []
+}
