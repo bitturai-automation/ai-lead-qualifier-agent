@@ -34,3 +34,5 @@ Every lead gets:
 Bittu Rai — AI Automation Engineer
 GitHub: github.com/bitturai-automation
 ```
+## Workflow Screenshot
+<img width="1162" height="621" alt="image" src="https://github.com/user-attachments/assets/1e050084-4d58-4ad6-86a2-7570856b4ea5" />
